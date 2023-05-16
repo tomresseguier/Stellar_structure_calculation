@@ -45,6 +45,6 @@ def plt_framework() :
     
     plt.rcParams['savefig.bbox']='tight'
     plt.rcParams['savefig.format']='pdf'
-    plt.rcParams['savefig.dpi']=400
+    plt.rcParams['savefig.dpi']=300
     
     #plt.rcParams['text.usetex']=True

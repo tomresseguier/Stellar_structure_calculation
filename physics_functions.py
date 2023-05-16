@@ -13,20 +13,43 @@ import sys
 from scipy.interpolate import RegularGridInterpolator
 from matplotlib import pyplot as plt
 
-from utils.utils import opacity_reader
 exec(open("./constants.py").read())
 exec(open("./parameters.py").read())
 
 
+def opacity_reader(path, table_number=74) :
+    opacity_tables = open(path, 'r')
+    lines = opacity_tables.readlines()
+    table_name = 'TABLE # ' + str(74)
+    table_index = np.where([table_name in line for line in lines])[0][1]
+    
+    logR_range_str = lines[table_index + 4].split()[1:]
+    logR_range = [float(num_str) for num_str in logR_range_str]
+    
+    logT_range_str = [lines[table_index + 6 + i].split()[0] for i in range(70)]
+    logT_range = [float(num_str) for num_str in logT_range_str]
+    
+    table = np.zeros((len(logT_range), len(logR_range)))
+    
+    for i in range(len(table)) :
+        line_str = lines[table_index + 6 + i].split()[1:]
+        if len(line_str) < 19 :
+            for j in range(19 - len(line_str)) :
+                line_str.append('nan')
+        table[i] = np.array([float(num_str) for num_str in line_str])
+    
+    return table, logR_range, logT_range
+
+
 table, logR_range, logT_range = opacity_reader('./opacity_tables/GN93hz', table_number=74)
-opacity_interpolated = RegularGridInterpolator((logT_range, logR_range), table)
+opacity_interpolated = RegularGridInterpolator((logT_range, logR_range), table, bounds_error=False, fill_value=np.nan)
 
 
 def opacity(rho, T) :
-    R = np.maximum( 1e-8, rho / (T*1e-6)**3 )
-    T = np.maximum( 10**3.75, T )
-    logR = np.log10(R)
-    logT = np.log10(T)
+    R_bis = np.maximum( 1e-8, rho / (T*1e-6)**3 )
+    T_bis = np.maximum( 10**3.75, T )
+    logR = np.log10(R_bis)
+    logT = np.log10(T_bis)
     
     if type(logR) == np.ndarray and type(logT) == np.ndarray :
         log_kappa = np.zeros(len(logR))
@@ -76,8 +99,8 @@ def Pressure(rho, T, mu) :
 
 
 def density(P, T, mu) :
-    #rho = mu/(Na*k) * (P/T - a*T**3/3)
-    rho = np.maximum( 0, mu/(Na*k) * (P/T - a*T**3/3) )
+    rho = mu/(Na*k) * (P/T - a*T**3/3)
+    #rho = np.maximum( 0, mu/(Na*k) * (P/T - a*T**3/3) )
     return rho
 
 
